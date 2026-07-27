@@ -1,4 +1,10 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "signal_wait.h"
 #include "grpc_wrapper.h"
+
 
 int main() {
     const char* target_addr = "localhost:50051";
@@ -13,6 +19,17 @@ int main() {
     if (err_code != 0) {
         return 1;
     }
+
+    // just for testing
+    char *error_message = NULL;
+    if (create_task("MyTask", error_message) == 0) {
+        printf("Task created successfully\n");
+    } else {
+        printf("Failed to create task\n");
+    }
+
+    signal_wait_init();
+    signal_wait_forever();
     
     return 0;
 }

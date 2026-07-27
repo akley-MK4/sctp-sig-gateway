@@ -18,7 +18,7 @@ deps += [
 srcs = []
 subdir('src')
 
-heads = include_directories('src/grpc_mgr')
+heads = include_directories('src', 'src/grpc_mgr')
 
 executable(
     'gw',

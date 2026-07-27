@@ -1,5 +1,3 @@
-#include "task.grpc.pb.h"
-#include "task.pb.h"
 #include "grpc_mgr.h"
 #include "grpc_svc_impl.h"
 #include "grpc_wrapper.h"
@@ -16,7 +14,7 @@ GrpcMgr::~GrpcMgr() {
         return;
     }
 
-    channel.reset();
+    channel_.reset();
 }
 
 GrpcMgr& GrpcMgr::GetInstance() {
@@ -35,9 +33,9 @@ int wrap_start_grpc_mgr() {
 }
 
 int GrpcMgr::initialize(const string& target_addr, const string& srv_addr) {
-    this->target_addr = target_addr;
-    this->srv_addr = srv_addr;
-    this->channel = grpc::CreateChannel(target_addr, grpc::InsecureChannelCredentials());
+    target_addr_ = target_addr;
+    srv_addr_ = srv_addr;
+    channel_ = grpc::CreateChannel(target_addr, grpc::InsecureChannelCredentials());
     initialized_ = true;
     return 0;
 }
@@ -51,26 +49,46 @@ int GrpcMgr::Start() {
     }
     started_ = true;
 
-    this->startServer();
+    startServer();
     return 0;
+}
+
+std::shared_ptr<ChannelInterface> GrpcMgr::getChannel() {
+    return channel_;
+}
+
+bool GrpcMgr::IsStarted() {
+    return started_;
 }
 
 void GrpcMgr::startServer() {
     //string server_address("0.0.0.0:50051");
-    TaskServiceImpl service;
 
     grpc::ServerBuilder builder;
-    builder.AddListeningPort(this->srv_addr, grpc::InsecureServerCredentials());
-    builder.RegisterService(&service);
+    builder.AddListeningPort(srv_addr_, grpc::InsecureServerCredentials());
+    builder.RegisterService(&service_);
 
-    std::unique_ptr<grpc::Server> server(builder.BuildAndStart());
-    std::cout << "[Server] Listening on " << this->srv_addr << std::endl;
+    server_ = builder.BuildAndStart();
+    std::cout << "[Server] Listening on " << srv_addr_ << std::endl;
 
-    server->Wait();
+    //server->Wait();
+
+    server_thread_ = std::thread(&GrpcMgr::ServerThreadFunc, this);
 }
 
-int GrpcMgr::CreateTask(const char* task_name, char* error_message) {
-    task::TaskService::Stub stub(this->channel);
+void GrpcMgr::ServerThreadFunc() {
+    std::cout << "[GrpcMgr] Server thread started, waiting for requests..." << std::endl;
+    server_->Wait();
+    std::cout << "[GrpcMgr] Server thread exited" << std::endl;
+}
+
+int create_task(const char* task_name, char* error_message) {
+    GrpcMgr& inst = GrpcMgr::GetInstance();
+    if (!inst.IsStarted()) {
+        return 1;
+    }
+
+    task::TaskService::Stub stub(inst.getChannel());
     auto request = task::MsgCreateTaskRequest();
     task::MsgCreateTaskResponse response;
 
@@ -85,7 +103,7 @@ int GrpcMgr::CreateTask(const char* task_name, char* error_message) {
 
     // ctx for timeout
     grpc::ClientContext context;
-    context.set_deadline(std::chrono::system_clock::now() + std::chrono::seconds(10));
+    context.set_deadline(std::chrono::system_clock::now() + std::chrono::seconds(2));
 
     grpc::Status status = stub.CreateTask(&context, request, &response);
 
