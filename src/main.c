@@ -8,5 +8,11 @@ int main() {
     if (err_code != 0) {
         return 1;
     }
+
+    err_code = wrap_start_grpc_mgr();
+    if (err_code != 0) {
+        return 1;
+    }
+    
     return 0;
 }

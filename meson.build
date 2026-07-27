@@ -18,11 +18,13 @@ deps += [
 srcs = []
 subdir('src')
 
+heads = include_directories('src/grpc_mgr')
 
 executable(
     'gw',
-    sources: src,
+    sources: srcs,
     dependencies: deps,
     link_args: ['-lstdc++'], 
+    include_directories: heads,
     install: true
 )

@@ -8,16 +8,17 @@ using grpc::ChannelInterface;
 
 class GrpcMgr {
 public:
-  static int initialize(const string& target_addr, const string& srv_addr);
-  static GrpcMgr* GetInstance();
+  static GrpcMgr& GetInstance();
+  int initialize(const string& target_addr, const string& srv_addr);
   int Start();
   void startServer();
   int CreateTask(const char* task_name, char* error_message);
 
 private:
-  GrpcMgr(const string& target_addr, const string& srv_addr);
+  bool initialized_;
+  bool started_;
+  GrpcMgr();
   ~GrpcMgr();
-  static GrpcMgr* instance;
   string target_addr;
   string srv_addr;
   std::shared_ptr<ChannelInterface> channel;
