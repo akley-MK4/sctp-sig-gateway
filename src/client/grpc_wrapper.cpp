@@ -48,19 +48,22 @@ int grpc_create_task(void* grpc_channel, const char* task_name, char* error_mess
     auto* chan = static_cast<GrpcChannel*>(grpc_channel);
 
     task::TaskService::Stub stub(chan->get_channel());
-    task::MsgCreateTaskRequest request;
+    auto request = new task::MsgCreateTaskRequest;
     task::MsgCreateTaskResponse response;
 
-    request.set_taskname(task_name);
+    request->set_taskname(task_name);
     // metadata
-    task::MsgMetadata* metadata = request.mutable_metadata();
+    task::MsgMetadata* metadata = request->mutable_metadata();
     // timestamp
     auto duration = std::chrono::system_clock::now().time_since_epoch();
     metadata->mutable_timestamp()->set_seconds(std::chrono::duration_cast<std::chrono::seconds>(duration).count());
     // seq
     metadata->set_seq(1);
 
+    // ctx for timeout
     grpc::ClientContext context;
+    context.set_deadline(std::chrono::system_clock::now() + std::chrono::seconds(10));
+
     grpc::Status status = stub.CreateTask(&context, request, &response);
 
     if (!status.ok()) {
