@@ -6,6 +6,7 @@ deps = [
     dependency('grpc++'), 
     dependency('grpc'), 
     dependency('protobuf'),
+    dependency('libevent'),
 ]
 
 subdir('proto')
@@ -18,7 +19,7 @@ deps += [
 srcs = []
 subdir('src')
 
-heads = include_directories('src', 'src/grpc_mgr')
+heads = include_directories('src', 'src/reactor', 'src/grpc_mgr')
 
 executable(
     'gw',

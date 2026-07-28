@@ -2,6 +2,8 @@
 grpc/1.50.1
 grpc-proto/cci.20220627
 protobuf-c/1.5.2
+nlohmann_json/3.11.2
+libevent/2.1.12
 
 [tool_requires]
 grpc/1.50.1
