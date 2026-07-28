@@ -2,13 +2,30 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "signal_wait.h"
+#include "event_loop.h"      /* Singleton event loop      */
+#include "signal_handler.h"  /* Signal registration        */
 #include "grpc_wrapper.h"
 
 
 int main() {
     const char* target_addr = "localhost:50051";
     const char* srv_addr = "0.0.0.0:50051";
+
+    struct signal_handler *sig_h = NULL;
+    int ret = 1;  /* default exit code: failure */
+
+    // Initialize event loop
+    if (event_loop_init() != 0) {
+        fprintf(stderr, "Failed to initialize event loop\n");
+        return 1;
+    }
+
+    // Register signal handler on the same base
+    sig_h = signal_handler_new(event_loop_get_base());
+    if (sig_h == NULL || signal_handler_start(sig_h) != 0) {
+        fprintf(stderr, "Failed to register signal handler\n");
+        goto cleanup;
+    }
 
     int err_code = wrap_initialize_grpc_mgr(target_addr, srv_addr);
     if (err_code != 0) {
@@ -28,8 +45,20 @@ int main() {
         printf("Failed to create task\n");
     }
 
-    signal_wait_init();
-    signal_wait_forever();
-    
-    return 0;
+    // Block main thread: enter event loop
+    // Runs until SIGINT/SIGTERM triggers loopbreak
+    if (event_loop_run() != 0) {
+        goto cleanup;
+    }
+
+    ret = 0;  /* success */
+
+cleanup:
+    /* ---------- 5. Cleanup ---------- */
+    if (sig_h != NULL) {
+        signal_handler_free(sig_h);
+    }
+    event_loop_cleanup();
+
+    return ret;
 }

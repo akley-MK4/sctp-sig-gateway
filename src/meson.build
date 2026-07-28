@@ -3,4 +3,5 @@ srcs += files([
        'signal_wait.c',
        ])
 
+subdir('reactor')
 subdir('grpc_mgr')
