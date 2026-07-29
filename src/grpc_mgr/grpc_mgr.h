@@ -11,7 +11,7 @@ using grpc::ChannelInterface;
 class GrpcMgr {
 public:
   static GrpcMgr& GetInstance();
-  int initialize(const string& target_addr, const string& srv_addr);
+  int initialize();
   int Start();
   void startServer();
   int CreateTask(const char* task_name, char* error_message);

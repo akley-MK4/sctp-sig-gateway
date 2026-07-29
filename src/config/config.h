@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #define CFG_GRPC_ADDR_LEN 32
+#define CFG_FILE_PATH "/etc/config/config.json"
 
 typedef struct config_grpc_s {
     char target_addr[CFG_GRPC_ADDR_LEN];
@@ -18,11 +19,10 @@ typedef struct config_s {
 
 } config_t;
 
-
-//config_t g_config;
-
 //int check_config_file();
 int load_config();
+config_t get_config();
+void watch_config_file(void *arg);
 
 #ifdef __cplusplus
 }

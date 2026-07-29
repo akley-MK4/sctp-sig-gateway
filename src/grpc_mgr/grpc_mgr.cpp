@@ -1,6 +1,9 @@
+#include "config.h"
 #include "grpc_mgr.h"
 #include "grpc_svc_impl.h"
-#include "grpc_wrapper.h"
+#include "grpc_export.h"
+
+using std::string;
 
 GrpcMgr::GrpcMgr() 
   : initialized_(false), 
@@ -22,9 +25,9 @@ GrpcMgr& GrpcMgr::GetInstance() {
     return instance;
 }
 
-int wrap_initialize_grpc_mgr(const char* target_addr, const char* srv_addr) {
+int wrap_initialize_grpc_mgr() {
     GrpcMgr& inst = GrpcMgr::GetInstance();
-    return inst.initialize(target_addr, srv_addr);
+    return inst.initialize();
 }
 
 int wrap_start_grpc_mgr() {
@@ -32,10 +35,11 @@ int wrap_start_grpc_mgr() {
     return inst.Start();
 }
 
-int GrpcMgr::initialize(const string& target_addr, const string& srv_addr) {
-    target_addr_ = target_addr;
-    srv_addr_ = srv_addr;
-    channel_ = grpc::CreateChannel(target_addr, grpc::InsecureChannelCredentials());
+int GrpcMgr::initialize() {
+    config_t cfg = get_config();
+    target_addr_ = string(cfg.grpc.target_addr);
+    srv_addr_ = string(cfg.grpc.srv_addr);
+    channel_ = grpc::CreateChannel(target_addr_, grpc::InsecureChannelCredentials());
     initialized_ = true;
     return 0;
 }

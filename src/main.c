@@ -6,7 +6,7 @@
 #include "signal_handler.h"  /* Signal registration        */
 #include "file_watcher.h"
 #include "config.h"
-#include "grpc_wrapper.h"
+#include "grpc_export.h"
 
 static void on_sigint(int signum, void *arg) {
     struct event_base *eb = (struct event_base *)arg;
@@ -18,9 +18,6 @@ static void on_sigint(int signum, void *arg) {
 }
 
 int main() {
-    const char* target_addr = "localhost:50051";
-    const char* srv_addr = "0.0.0.0:50051";
-
     // Initialize event loop
     if (event_loop_init() != 0) {
         fprintf(stderr, "Failed to initialize event loop\n");
@@ -28,11 +25,8 @@ int main() {
     }
 
     // Register signal handlers
-    {
-        struct event_base* eb = event_loop_get_base();
-        register_signal_handler(eb, SIGINT,  on_sigint, NULL);
-        register_signal_handler(eb, SIGTERM, on_sigint, NULL);
-    }
+    register_signal_handler(event_loop_get_base(), SIGINT,  on_sigint, NULL);
+    register_signal_handler(event_loop_get_base(), SIGTERM, on_sigint, NULL);
     
     // Config
     if (load_config() != 0) {
@@ -40,7 +34,7 @@ int main() {
         return 1;
     }
 
-    int err_code = wrap_initialize_grpc_mgr(target_addr, srv_addr);
+    int err_code = wrap_initialize_grpc_mgr();
     if (err_code != 0) {
         return 1;
     }
@@ -49,6 +43,10 @@ int main() {
     if (err_code != 0) {
         return 1;
     }
+
+    // watch config file
+    register_file_watcher(event_loop_get_base(), CFG_FILE_PATH, watch_config_file, NULL);
+    
 
     // just for testing
     char *error_message = NULL;
