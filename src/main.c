@@ -34,23 +34,23 @@ int main() {
         return 1;
     }
 
-    int err_code = wrap_initialize_grpc_mgr();
+    int err_code = initialize_grpc_mgr();
     if (err_code != 0) {
         return 1;
     }
 
-    err_code = wrap_start_grpc_mgr();
+    err_code = start_grpc_mgr();
     if (err_code != 0) {
         return 1;
     }
 
     // watch config file
-    register_file_watcher(event_loop_get_base(), CFG_FILE_PATH, watch_config_file, NULL);
+    register_file_watcher(event_loop_get_base(), CFG_FILE_PATH, on_config_file_updated, NULL);
     
 
     // just for testing
     char *error_message = NULL;
-    if (create_task("MyTask", error_message) == 0) {
+    if (grpc_create_task("MyTask", error_message) == 0) {
         printf("Task created successfully\n");
     } else {
         printf("Failed to create task\n");

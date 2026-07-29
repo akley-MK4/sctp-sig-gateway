@@ -69,6 +69,7 @@ int load_config() {
     return 0;
 }
 
-void watch_config_file(void *arg) {
+void on_config_file_updated(void *arg) {
+    (void)arg;
     load_config();
 }

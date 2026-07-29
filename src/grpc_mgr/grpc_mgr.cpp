@@ -25,16 +25,6 @@ GrpcMgr& GrpcMgr::GetInstance() {
     return instance;
 }
 
-int wrap_initialize_grpc_mgr() {
-    GrpcMgr& inst = GrpcMgr::GetInstance();
-    return inst.initialize();
-}
-
-int wrap_start_grpc_mgr() {
-    GrpcMgr& inst = GrpcMgr::GetInstance();
-    return inst.Start();
-}
-
 int GrpcMgr::initialize() {
     config_t cfg = get_config();
     target_addr_ = string(cfg.grpc.target_addr);
@@ -86,7 +76,17 @@ void GrpcMgr::ServerThreadFunc() {
     std::cout << "[GrpcMgr] Server thread exited" << std::endl;
 }
 
-int create_task(const char* task_name, char* error_message) {
+int initialize_grpc_mgr() {
+    GrpcMgr& inst = GrpcMgr::GetInstance();
+    return inst.initialize();
+}
+
+int start_grpc_mgr() {
+    GrpcMgr& inst = GrpcMgr::GetInstance();
+    return inst.Start();
+}
+
+int grpc_create_task(const char* task_name, char* error_message) {
     GrpcMgr& inst = GrpcMgr::GetInstance();
     if (!inst.IsStarted()) {
         return 1;
