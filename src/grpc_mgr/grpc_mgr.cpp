@@ -30,6 +30,14 @@ int GrpcMgr::initialize() {
     target_addr_ = string(cfg.grpc.target_addr);
     srv_addr_ = string(cfg.grpc.srv_addr);
     channel_ = grpc::CreateChannel(target_addr_, grpc::InsecureChannelCredentials());
+
+    for (int i = 0; i < 2; ++i) {
+        // All AsyncClient instances share the same underlying HTTP/2 connection
+        auto client = std::make_unique<AsyncClient>(i, channel_);
+        client->Start();
+        clients_.push_back(std::move(client));
+    }
+
     initialized_ = true;
     return 0;
 }
@@ -67,13 +75,19 @@ void GrpcMgr::startServer() {
 
     //server->Wait();
 
-    server_thread_ = std::thread(&GrpcMgr::ServerThreadFunc, this);
+    server_thread_ = std::thread(&GrpcMgr::serverThreadFunc, this);
 }
 
-void GrpcMgr::ServerThreadFunc() {
+void GrpcMgr::serverThreadFunc() {
     std::cout << "[GrpcMgr] Server thread started, waiting for requests..." << std::endl;
     server_->Wait();
     std::cout << "[GrpcMgr] Server thread exited" << std::endl;
+}
+
+AsyncClient* GrpcMgr::PickClient() {
+    if (clients_.empty()) return nullptr;
+    size_t idx = pick_counter_.fetch_add(1) % clients_.size();
+    return clients_[idx].get();
 }
 
 int initialize_grpc_mgr() {
@@ -120,6 +134,27 @@ int grpc_create_task(const char* task_name, char* error_message) {
         error_message = strdup(("Task creation failed with error code: " + std::to_string(response.errcode())).c_str());
         return 1;
     }
+
+    return 0;
+}
+
+int grpc_create_task_async(const char* task_name, char* error_message) {
+    GrpcMgr& inst = GrpcMgr::GetInstance();
+    if (!inst.IsStarted()) {
+        return 1;
+    }
+
+
+    auto asyncClient = inst.PickClient();
+    asyncClient->CreateTaskAsync(string(task_name), [](int errcode, void* reply) {
+        if (errcode == 0) {
+            auto* resp = static_cast<task::MsgCreateTaskResponse*>(reply);
+            std::cout << "Task created successfully." + resp->metadata().DebugString() << std::endl;
+        } else {
+            std::cerr << "Task creation failed, error code: " << errcode << std::endl;
+        }
+    });
+
 
     return 0;
 }
