@@ -49,8 +49,7 @@ int main() {
     
 
     // just for testing
-    char *error_message = NULL;
-    if (grpc_create_task_async("MyTask", error_message) == 0) {
+    if (grpc_create_task_async("MyTask") == 0) {
         printf("Task created successfully\n");
     } else {
         printf("Failed to create task\n");
@@ -62,6 +61,9 @@ int main() {
         goto cleanup;
     }
 
+    stop_grpc_mgr();
+
+    
 cleanup:
     event_loop_cleanup();
 

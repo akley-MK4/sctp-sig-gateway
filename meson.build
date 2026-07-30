@@ -20,7 +20,7 @@ deps += [
 srcs = []
 subdir('src')
 
-heads = include_directories('src', 'src/config', 'src/reactor', 'src/grpc_mgr')
+heads = include_directories('src', 'src/config', 'src/framework', 'src/grpc_mgr')
 
 executable(
     'gw',

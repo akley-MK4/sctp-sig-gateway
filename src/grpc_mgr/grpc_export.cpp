@@ -6,9 +6,14 @@ int initialize_grpc_mgr() {
     return inst.initialize();
 }
 
+int stop_grpc_mgr() {
+    GrpcMgr& inst = GrpcMgr::GetInstance();
+    return inst.stop();
+}
+
 int start_grpc_mgr() {
     GrpcMgr& inst = GrpcMgr::GetInstance();
-    return inst.Start();
+    return inst.start();
 }
 
 int grpc_create_task(const char* task_name, char* error_message) {
@@ -49,7 +54,7 @@ int grpc_create_task(const char* task_name, char* error_message) {
     return 0;
 }
 
-int grpc_create_task_async(const char* task_name, char* error_message) {
+int grpc_create_task_async(const char* task_name) {
     GrpcMgr& inst = GrpcMgr::GetInstance();
     if (!inst.IsStarted()) {
         return 1;

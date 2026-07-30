@@ -6,9 +6,10 @@ extern "C" {
 #endif
 
 int initialize_grpc_mgr();
+int stop_grpc_mgr();
 int start_grpc_mgr();
 int grpc_create_task(const char* task_name, char* error_message);
-int grpc_create_task_async(const char* task_name, char* error_message);
+int grpc_create_task_async(const char* task_name);
 
 #ifdef __cplusplus
 }

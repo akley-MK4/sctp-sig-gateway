@@ -60,6 +60,7 @@ void AsyncClient::CQThreadFunc() {
         auto status = cq_->Next(&tag, &ok);
 
         if (status == grpc::CompletionQueue::SHUTDOWN) {
+            std::cout << "CQ closed, exit loop id=" << id_ << " stopped.\n";
             break;   // CQ closed, exit loop
         }
         if (!ok || !tag) {

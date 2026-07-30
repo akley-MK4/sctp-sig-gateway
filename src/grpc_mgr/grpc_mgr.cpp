@@ -4,7 +4,7 @@
 
 using std::string;
 
-#define MAX_NUM_ASYNC_CLIENTS 2
+#define MAX_NUM_ASYNC_CLIENTS 1
 
 GrpcMgr::GrpcMgr() 
   : initialized_(false), 
@@ -42,7 +42,7 @@ int GrpcMgr::initialize() {
     return 0;
 }
 
-int GrpcMgr::Start() {
+int GrpcMgr::start() {
     if (!initialized_) {
         return 1;
     }
@@ -54,6 +54,11 @@ int GrpcMgr::Start() {
     startServer();
     startAsyncClients();
 
+    return 0;
+}
+
+int GrpcMgr::stop() {
+    stopAsyncClients();
     return 0;
 }
 
@@ -78,6 +83,12 @@ void GrpcMgr::startServer() {
 void GrpcMgr::startAsyncClients() {
     for (auto& client : clients_) {
         client->Start();
+    }
+}
+
+void GrpcMgr::stopAsyncClients() {
+    for (auto& client : clients_) {
+        client->Stop();
     }
 }
 

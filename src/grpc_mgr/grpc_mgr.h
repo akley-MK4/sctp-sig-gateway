@@ -13,7 +13,8 @@ class GrpcMgr {
 public:
     static GrpcMgr& GetInstance();
     int initialize();
-    int Start();
+    int start();
+    int stop();
     int CreateTask(const char* task_name, char* error_message);
     bool IsStarted();
     std::shared_ptr<ChannelInterface> getChannel();
@@ -25,6 +26,7 @@ private:
     void serverThreadFunc();
     void startServer();
     void startAsyncClients();
+    void stopAsyncClients();
 
     //std::atomic<bool> initialized_{false};
     bool initialized_;
