@@ -1,9 +1,10 @@
 #include "config.h"
 #include "grpc_mgr.h"
 #include "grpc_svc_impl.h"
-#include "grpc_export.h"
 
 using std::string;
+
+#define MAX_NUM_ASYNC_CLIENTS 2
 
 GrpcMgr::GrpcMgr() 
   : initialized_(false), 
@@ -31,10 +32,9 @@ int GrpcMgr::initialize() {
     srv_addr_ = string(cfg.grpc.srv_addr);
     channel_ = grpc::CreateChannel(target_addr_, grpc::InsecureChannelCredentials());
 
-    for (int i = 0; i < 2; ++i) {
-        // All AsyncClient instances share the same underlying HTTP/2 connection
+    for (int i = 0; i < MAX_NUM_ASYNC_CLIENTS; ++i) {
+        // All AsyncClients share the same underlying HTTP/2 connection
         auto client = std::make_unique<AsyncClient>(i, channel_);
-        client->Start();
         clients_.push_back(std::move(client));
     }
 
@@ -52,6 +52,8 @@ int GrpcMgr::Start() {
     started_ = true;
 
     startServer();
+    startAsyncClients();
+
     return 0;
 }
 
@@ -64,18 +66,19 @@ bool GrpcMgr::IsStarted() {
 }
 
 void GrpcMgr::startServer() {
-    //string server_address("0.0.0.0:50051");
-
     grpc::ServerBuilder builder;
     builder.AddListeningPort(srv_addr_, grpc::InsecureServerCredentials());
     builder.RegisterService(&service_);
 
     server_ = builder.BuildAndStart();
     std::cout << "[Server] Listening on " << srv_addr_ << std::endl;
-
-    //server->Wait();
-
     server_thread_ = std::thread(&GrpcMgr::serverThreadFunc, this);
+}
+
+void GrpcMgr::startAsyncClients() {
+    for (auto& client : clients_) {
+        client->Start();
+    }
 }
 
 void GrpcMgr::serverThreadFunc() {
@@ -88,73 +91,4 @@ AsyncClient* GrpcMgr::PickClient() {
     if (clients_.empty()) return nullptr;
     size_t idx = pick_counter_.fetch_add(1) % clients_.size();
     return clients_[idx].get();
-}
-
-int initialize_grpc_mgr() {
-    GrpcMgr& inst = GrpcMgr::GetInstance();
-    return inst.initialize();
-}
-
-int start_grpc_mgr() {
-    GrpcMgr& inst = GrpcMgr::GetInstance();
-    return inst.Start();
-}
-
-int grpc_create_task(const char* task_name, char* error_message) {
-    GrpcMgr& inst = GrpcMgr::GetInstance();
-    if (!inst.IsStarted()) {
-        return 1;
-    }
-
-    task::TaskService::Stub stub(inst.getChannel());
-    auto request = task::MsgCreateTaskRequest();
-    task::MsgCreateTaskResponse response;
-
-    request.set_taskname(task_name);
-    // metadata
-    task::MsgMetadata* metadata = request.mutable_metadata();
-    // timestamp
-    auto duration = std::chrono::system_clock::now().time_since_epoch();
-    metadata->mutable_timestamp()->set_seconds(std::chrono::duration_cast<std::chrono::seconds>(duration).count());
-    // seq
-    metadata->set_seq(1);
-
-    // ctx for timeout
-    grpc::ClientContext context;
-    context.set_deadline(std::chrono::system_clock::now() + std::chrono::seconds(2));
-
-    grpc::Status status = stub.CreateTask(&context, request, &response);
-
-    if (!status.ok()) {
-        error_message = strdup(status.error_message().c_str());
-        return 1;
-    }
-
-    if (response.errcode() != 0) {
-        error_message = strdup(("Task creation failed with error code: " + std::to_string(response.errcode())).c_str());
-        return 1;
-    }
-
-    return 0;
-}
-
-int grpc_create_task_async(const char* task_name, char* error_message) {
-    GrpcMgr& inst = GrpcMgr::GetInstance();
-    if (!inst.IsStarted()) {
-        return 1;
-    }
-
-
-    auto asyncClient = inst.PickClient();
-    asyncClient->CreateTaskAsync(string(task_name), [](int errcode, void* reply) {
-        if (errcode == 0) {
-            auto* resp = static_cast<task::MsgCreateTaskResponse*>(reply);
-            std::cout << "Task created successfully." + resp->metadata().DebugString() << std::endl;
-        } else {
-            std::cerr << "Task creation failed, error code: " << errcode << std::endl;
-        }
-    });
-
-
-    return 0;
 }

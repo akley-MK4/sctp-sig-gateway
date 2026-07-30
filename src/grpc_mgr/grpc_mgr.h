@@ -14,7 +14,6 @@ public:
     static GrpcMgr& GetInstance();
     int initialize();
     int Start();
-    void startServer();
     int CreateTask(const char* task_name, char* error_message);
     bool IsStarted();
     std::shared_ptr<ChannelInterface> getChannel();
@@ -24,7 +23,10 @@ private:
     GrpcMgr();
     ~GrpcMgr();
     void serverThreadFunc();
+    void startServer();
+    void startAsyncClients();
 
+    //std::atomic<bool> initialized_{false};
     bool initialized_;
     bool started_;
     string target_addr_;

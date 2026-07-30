@@ -1,14 +1,20 @@
-#pragma once
+#ifndef GRPC_ASYNC_CLIENT_H_H
+#define GRPC_ASYNC_CLIENT_H_H
 
+#include <functional>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/support/status.h>
 #include <thread>
 #include <atomic>
 #include <memory>
 #include <functional>
 #include <string>
-#include "call_tag.h"
 #include "task.grpc.pb.h"   // generated proto header
+
+using std::string;
+using asyncCallback = std::function<void(int, void*)>;
 
 // Single async client: owns one CompletionQueue and one background thread.
 // The Channel is passed in from outside (e.g. GrpcMgr), not created internally.
@@ -26,9 +32,9 @@ public:
     void Stop();    // Shutdown CQ and join the thread
 
     // Non-blocking async RPC interfaces
-    void CreateTaskAsync(const std::string& task_name, asyncCallback cb);
+    void CreateTaskAsync(const string& task_name, asyncCallback cb);
 
-    void DeleteTaskAsync(const std::string& task_name, asyncCallback cb);
+    void DeleteTaskAsync(const string& task_name, asyncCallback cb);
 
     int Id() const { return id_; }
 
@@ -42,3 +48,38 @@ private:
     std::atomic<bool> running_{false};
     std::thread cq_thread_;
 };
+
+// ── Base class for all AsyncCall tags ──────────────────────────────
+struct CallTagBase {
+    virtual ~CallTagBase() = default;
+    virtual void OnComplete() = 0;
+};
+
+// ── CreateTask RPC ─────────────────────────────────────────────────
+struct CreateTaskCall : public CallTagBase {
+    grpc::ClientContext ctx;
+    grpc::Status status;
+    task::MsgCreateTaskRequest  request;
+    task::MsgCreateTaskResponse response;
+    asyncCallback callback;
+
+    void OnComplete() override {
+        callback(status.error_code(), &response);
+    }
+};
+
+// ── DeleteTask RPC ─────────────────────────────────────────────────
+struct DeleteTaskCall : public CallTagBase {
+    grpc::ClientContext ctx;
+    grpc::Status status;
+    task::MsgDeleteTaskRequest  request;
+    task::MsgDeleteTaskResponse response;
+    asyncCallback callback;
+
+    void OnComplete() override {
+        int err = status.ok() ? 0 : status.error_code();
+        if (callback) callback(err, &response);
+    }
+};
+
+#endif

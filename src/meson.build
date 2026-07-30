@@ -3,5 +3,5 @@ srcs += files([
        ])
 
 subdir('config')
-subdir('reactor')
+subdir('framework')
 subdir('grpc_mgr')
