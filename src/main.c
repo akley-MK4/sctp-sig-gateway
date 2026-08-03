@@ -7,6 +7,7 @@
 #include "file_watcher.h"
 #include "config.h"
 #include "grpc_export.h"
+#include "task_mgr.h"
 
 static void on_sigint(int signum, void *arg) {
     struct event_base *eb = (struct event_base *)arg;
@@ -39,7 +40,18 @@ int main() {
         return 1;
     }
 
+    err_code = initialize_task_mgr();
+    if (err_code != 0) {
+        return 1;
+    }
+
+
     err_code = start_grpc_mgr();
+    if (err_code != 0) {
+        return 1;
+    }
+
+    err_code = start_task_mgr();
     if (err_code != 0) {
         return 1;
     }
@@ -47,13 +59,7 @@ int main() {
     // watch config file
     register_file_watcher(event_loop_get_base(), CFG_FILE_PATH, on_config_file_updated, NULL);
     
-
-    // just for testing
-    if (grpc_create_task_async("MyTask") == 0) {
-        printf("Task created successfully\n");
-    } else {
-        printf("Failed to create task\n");
-    }
+    create_task("test_task_1");
 
     // Block main thread: enter event loop
     // Runs until SIGINT/SIGTERM triggers loopbreak

@@ -12,9 +12,11 @@
 #include <functional>
 #include <string>
 #include "task.grpc.pb.h"   // generated proto header
+#include "grpc_export.h"  // for callback type
 
 using std::string;
-using asyncCallback = std::function<void(int, void*)>;
+//using createTaskAsyncCallbackk = std::function<void(int errCode, int createTaskId)>;
+using deleteTaskAsyncCallback = std::function<void(int errCode, void* response)>;
 
 // Single async client: owns one CompletionQueue and one background thread.
 // The Channel is passed in from outside (e.g. GrpcMgr), not created internally.
@@ -32,9 +34,10 @@ public:
     void Stop();    // Shutdown CQ and join the thread
 
     // Non-blocking async RPC interfaces
-    void CreateTaskAsync(const string& task_name, asyncCallback cb);
+    void CreateTaskAsync(const string& task_name, grpc_create_task_callback cb);
+    void CreateTaskAsyncWithCallbackApi(const string& task_name, grpc_create_task_callback cb);
 
-    void DeleteTaskAsync(const string& task_name, asyncCallback cb);
+    void DeleteTaskAsync(const string& task_name, deleteTaskAsyncCallback cb);
 
     int Id() const { return id_; }
 
@@ -61,10 +64,10 @@ struct CreateTaskCall : public CallTagBase {
     grpc::Status status;
     task::MsgCreateTaskRequest  request;
     task::MsgCreateTaskResponse response;
-    asyncCallback callback;
+    grpc_create_task_callback callback;
 
     void OnComplete() override {
-        callback(status.error_code(), &response);
+        callback(status.error_code(), response.createtaskid());
     }
 };
 
@@ -74,7 +77,7 @@ struct DeleteTaskCall : public CallTagBase {
     grpc::Status status;
     task::MsgDeleteTaskRequest  request;
     task::MsgDeleteTaskResponse response;
-    asyncCallback callback;
+    deleteTaskAsyncCallback callback;
 
     void OnComplete() override {
         int err = status.ok() ? 0 : status.error_code();

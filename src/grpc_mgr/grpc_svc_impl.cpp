@@ -19,6 +19,8 @@ grpc::ServerUnaryReactor* TaskServiceImpl::CreateTask(
     // timestamp
     auto duration = std::chrono::system_clock::now().time_since_epoch();
     respMetadata->mutable_timestamp()->set_seconds(std::chrono::duration_cast<std::chrono::seconds>(duration).count());
+    // task id
+    response->set_createtaskid(12345);  // Example task ID
 
     response->set_errcode(0);
 

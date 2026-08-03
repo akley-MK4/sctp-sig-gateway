@@ -75,10 +75,10 @@ void AsyncClient::CQThreadFunc() {
 }
 
 // ── Fire-and-forget async CreateTask ──────────────────────────────
-void AsyncClient::CreateTaskAsync(const std::string& task_name, asyncCallback cb) {
+void AsyncClient::CreateTaskAsync(const std::string& task_name, grpc_create_task_callback cb) {
     auto* call = new CreateTaskCall();
     call->request.set_taskname(task_name);
-    call->callback = std::move(cb);
+    call->callback = cb;
     call->ctx.set_deadline(std::chrono::system_clock::now() +
                            std::chrono::seconds(2));
 
@@ -86,8 +86,21 @@ void AsyncClient::CreateTaskAsync(const std::string& task_name, asyncCallback cb
     reader->Finish(&call->response, &call->status, static_cast<void*>(call));
 }
 
+void AsyncClient::CreateTaskAsyncWithCallbackApi(const std::string& task_name, grpc_create_task_callback cb) {
+    auto* call = new CreateTaskCall();
+    call->request.set_taskname(task_name);
+    call->callback = cb;
+    call->ctx.set_deadline(std::chrono::system_clock::now() + std::chrono::seconds(2));
+    stub_->async()->CreateTask(&call->ctx, &call->request, &call->response,
+        [call](grpc::Status status) {
+            call->status = status;
+            call->OnComplete();
+            delete call;
+        });
+}
+
 // ── Fire-and-forget async DeleteTask ──────────────────────────────
-void AsyncClient::DeleteTaskAsync(const std::string& task_name, asyncCallback cb) {
+void AsyncClient::DeleteTaskAsync(const std::string& task_name, deleteTaskAsyncCallback cb) {
     auto* call = new DeleteTaskCall();
     call->request.set_taskname(task_name);
     call->callback = std::move(cb);

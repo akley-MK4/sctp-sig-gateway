@@ -18,6 +18,7 @@ message MsgCreateTaskRequest {
 message MsgCreateTaskResponse {
     MsgMetadata metadata = 1;
     int32 errCode = 2;
+    int32 createTaskId = 3;
 }
 
 message MsgDeleteTaskRequest {

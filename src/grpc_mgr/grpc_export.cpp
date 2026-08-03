@@ -54,22 +54,26 @@ int grpc_create_task(const char* task_name, char* error_message) {
     return 0;
 }
 
-int grpc_create_task_async(const char* task_name) {
+int grpc_create_task_async(const char* task_name, grpc_create_task_callback cb) {
     GrpcMgr& inst = GrpcMgr::GetInstance();
     if (!inst.IsStarted()) {
         return 1;
     }
 
     auto asyncClient = inst.PickClient();
-    asyncClient->CreateTaskAsync(string(task_name), [](int errcode, void* reply) {
-        if (errcode == 0) {
-            auto* resp = static_cast<task::MsgCreateTaskResponse*>(reply);
-            std::cout << "Task created successfully." + resp->metadata().DebugString() << std::endl;
-        } else {
-            std::cerr << "Task creation failed, error code: " << errcode << std::endl;
-        }
-    });
+    asyncClient->CreateTaskAsync(string(task_name), cb);
 
+    return 0;
+}
+
+int grpc_create_task_async_with_cbapi(const char* task_name, grpc_create_task_callback cb) {
+    GrpcMgr& inst = GrpcMgr::GetInstance();
+    if (!inst.IsStarted()) {
+        return 1;
+    }
+
+    auto asyncClient = inst.PickClient();
+    asyncClient->CreateTaskAsyncWithCallbackApi(string(task_name), cb);
 
     return 0;
 }

@@ -5,3 +5,4 @@ srcs += files([
 subdir('config')
 subdir('framework')
 subdir('grpc_mgr')
+subdir('task')
