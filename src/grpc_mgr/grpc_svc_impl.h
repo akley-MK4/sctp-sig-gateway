@@ -5,16 +5,16 @@
 #include <grpcpp/grpcpp.h>
 #include "task.grpc.pb.h"
 
-class TaskServiceImpl final : public task::TaskService::Service {
+class TaskServiceImpl final : public task::TaskService::CallbackService {
 public:
-    grpc::Status CreateTask(
-        grpc::ServerContext* context,
+    grpc::ServerUnaryReactor* CreateTask(
+        grpc::CallbackServerContext* context,
         const task::MsgCreateTaskRequest* request,
         task::MsgCreateTaskResponse* response
     ) override;
 
-    grpc::Status DeleteTask(
-        grpc::ServerContext* context,
+    grpc::ServerUnaryReactor* DeleteTask(
+        grpc::CallbackServerContext* context,
         const task::MsgDeleteTaskRequest* request,
         task::MsgDeleteTaskResponse* response
     ) override;

@@ -1,7 +1,7 @@
 #include "grpc_svc_impl.h"
 
-grpc::Status TaskServiceImpl::CreateTask(
-    grpc::ServerContext* context,
+grpc::ServerUnaryReactor* TaskServiceImpl::CreateTask(
+    grpc::CallbackServerContext* context,
     const task::MsgCreateTaskRequest* request,
     task::MsgCreateTaskResponse* response
 ) {
@@ -23,11 +23,16 @@ grpc::Status TaskServiceImpl::CreateTask(
     response->set_errcode(0);
 
     std::cout << "[Server] Sending response message" << std::endl;
-    return grpc::Status::OK;
+
+    auto* reactor = context->DefaultReactor();
+
+    // testing
+    reactor->Finish(grpc::Status::OK);
+    return reactor;
 }
 
-grpc::Status TaskServiceImpl::DeleteTask(
-    grpc::ServerContext* context,
+grpc::ServerUnaryReactor* TaskServiceImpl::DeleteTask(
+    grpc::CallbackServerContext* context,
     const task::MsgDeleteTaskRequest* request,
     task::MsgDeleteTaskResponse* response
 ) {
@@ -37,5 +42,7 @@ grpc::Status TaskServiceImpl::DeleteTask(
     response->set_errcode(0);
 
     std::cout << "[Server] Sending response message" << std::endl;
-    return grpc::Status::OK;
+    
+    auto* reactor = context->DefaultReactor();
+    return reactor;
 }
