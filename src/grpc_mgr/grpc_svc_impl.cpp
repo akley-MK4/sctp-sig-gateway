@@ -1,3 +1,4 @@
+#include "logger.h"
 #include "grpc_svc_impl.h"
 
 grpc::ServerUnaryReactor* TaskServiceImpl::CreateTask(
@@ -6,13 +7,10 @@ grpc::ServerUnaryReactor* TaskServiceImpl::CreateTask(
     task::MsgCreateTaskResponse* response
 ) {
     task::MsgMetadata reqMetadata = request->metadata();
-
-    std::cout << "[TaskService] Create task: name="
-              << request->taskname()
-              << ", seq=" << request->metadata().seq()
-              << ", time=" << request->metadata().timestamp().seconds()
-              << std::endl;
-
+    log_debug("[TaskService] Create task: name=%s, seq=%lu, time=%ld",
+              request->taskname().c_str(),
+              reqMetadata.seq(),
+              reqMetadata.timestamp().seconds());
     
     task::MsgMetadata *respMetadata = response->mutable_metadata();
     respMetadata->set_seq(reqMetadata.seq());
@@ -24,7 +22,7 @@ grpc::ServerUnaryReactor* TaskServiceImpl::CreateTask(
 
     response->set_errcode(0);
 
-    std::cout << "[Server] Sending response message" << std::endl;
+    log_info("[TaskService] Sending the CreateTask response message");
 
     auto* reactor = context->DefaultReactor();
 
@@ -38,12 +36,15 @@ grpc::ServerUnaryReactor* TaskServiceImpl::DeleteTask(
     const task::MsgDeleteTaskRequest* request,
     task::MsgDeleteTaskResponse* response
 ) {
-    std::cout << "[TaskService] Delete task: name=" << request->taskname() << std::endl;
+    log_debug("[TaskService] Delete task: name=%s, seq=%lu, time=%ld",
+              request->taskname().c_str(),
+              request->metadata().seq(),
+              request->metadata().timestamp().seconds());
 
     response->mutable_metadata()->set_seq(request->metadata().seq());
     response->set_errcode(0);
 
-    std::cout << "[Server] Sending response message" << std::endl;
+    log_info("[TaskService] Sending the DeleteTask response message");
     
     auto* reactor = context->DefaultReactor();
     return reactor;

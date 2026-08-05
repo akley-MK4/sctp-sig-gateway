@@ -1,5 +1,6 @@
 #include <stdio.h>
 
+#include "logger.h"
 #include "task_mgr.h"
 #include "grpc_export.h"
 
@@ -13,23 +14,20 @@ int initialize_task_mgr() {
 int start_task_mgr() {
     // Implementation of starting the task manager
     return 0; // Return success
-
 }
 
 static void task_creation_callback(int errCode, int createTaskId) {
     if (errCode == 0) {
-        printf("Task created successfully with ID: %d\n", createTaskId);
+        log_info("Task created successfully with ID: %d", createTaskId);
     } else {
-        printf("Failed to create task, error code: %d\n", errCode);
+        log_error("Failed to create task, error code: %d", errCode);
     }
 }
 
 int create_task(const char* task_name) {
     // just for testing
-    if (grpc_create_task_async(task_name, task_creation_callback) == 0) {
-        printf("Task created successfully\n");
-    } else {
-        printf("Failed to create task\n");
+    if (grpc_create_task_async(task_name, task_creation_callback) != 0) {
+        log_error("Failed to create task");
     }
 
     return 0; // Return success

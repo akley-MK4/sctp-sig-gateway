@@ -1,3 +1,4 @@
+#include "logger.h"
 #include "grpc_async_client.h"
 #include <iostream>
 
@@ -16,11 +17,20 @@ AsyncClient::~AsyncClient() {
 
 bool AsyncClient::Start() {
     if (running_.exchange(true)) {
+        log_warn("[AsyncClient] Start() called but already running, id=%d", id_);
         return false;   // Already started
     }
 
-    //cq_thread_ = std::thread([this]() { CQThreadFunc(); });
-    cq_thread_ = std::thread(&AsyncClient::CQThreadFunc, this);
+    try {
+        // Launch the CQ thread and report its id for diagnostics
+        cq_thread_ = std::thread(&AsyncClient::CQThreadFunc, this);
+    } catch (const std::system_error& e) {
+        // Failed to create thread; restore running_ flag and report error
+        //running_.store(false);
+        log_error("[AsyncClient] id=%d failed to start thread: %s", id_, e.what());
+        return false;
+    }
+
     return true;
 }
 
@@ -50,12 +60,12 @@ void AsyncClient::Stop() {
         }
     }
 
-    std::cout << "[INFO] AsyncClient id=" << id_ << " stopped.\n";
+    log_info("[AsyncClient] id=%d stopped.", id_);
 }
 
 // ── Core loop: block on CQ, invoke callback directly, delete tag ──
 void AsyncClient::CQThreadFunc() {
-    std::cout << "[INFO] AsyncClient id=" << id_ << " started.\n";
+    log_info("[AsyncClient] CQ thread started. id=%d", id_);
     void* tag = nullptr;
     bool ok = false;
 
@@ -63,7 +73,7 @@ void AsyncClient::CQThreadFunc() {
         auto status = cq_->Next(&tag, &ok);
 
         if (status == grpc::CompletionQueue::SHUTDOWN) {
-            std::cout << "CQ closed, exit loop id=" << id_ << " stopped.\n";
+            log_info("[AsyncClient] id=%d CQ closed, exit loop.", id_);
             break;   // CQ closed, exit loop
         }
         if (!ok || !tag) {
@@ -71,7 +81,7 @@ void AsyncClient::CQThreadFunc() {
         }
 
         // Directly cast, call callback, and free – no intermediate queue
-        std::cout << "[INFO] AsyncClient id=" << id_ << " received response from grpc server.\n";
+        log_debug("[AsyncClient] received response from grpc server. id=%d", id_);
         auto* call = static_cast<CallTagBase*>(tag);
         call->OnComplete();
         delete call;

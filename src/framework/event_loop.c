@@ -1,4 +1,5 @@
 #include "event_loop.h"
+#include "logger.h"
 
 #include <stdio.h>
 
@@ -16,11 +17,11 @@ int event_loop_init(void) {
 
     g_base = event_base_new();
     if (g_base == NULL) {
-        fprintf(stderr, "event_loop: failed to create event_base\n");
+        log_error("event_loop: failed to create event_base");
         return 1;
     }
 
-    printf("event_loop: initialized (base=%p)\n", (void *)g_base);
+    log_info("event_loop: initialized (base=%p)", (void *)g_base);
     return 0;
 }
 
@@ -30,13 +31,13 @@ struct event_base *event_loop_get_base(void) {
 
 int event_loop_run(void) {
     if (g_base == NULL) {
-        fprintf(stderr, "event_loop: run() called before init()\n");
+        log_error("event_loop: run() called before init()");
         return 1;
     }
 
-    printf("event_loop: dispatching (Ctrl+C to stop)...\n");
+    log_info("event_loop: dispatching ...");
     event_base_dispatch(g_base);
-    printf("event_loop: dispatch returned, loop exited\n");
+    log_info("event_loop: dispatch returned, loop exited");
 
     return 0;
 }
@@ -59,6 +60,6 @@ int event_loop_cleanup(void) {
     event_base_free(g_base);
     g_base = NULL;
 
-    printf("event_loop: cleaned up\n");
+    log_info("event_loop: cleaned up");
     return 0;
 }

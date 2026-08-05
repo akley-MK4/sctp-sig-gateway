@@ -51,6 +51,12 @@ int load_config() {
         fprintf(stderr, "%s %u data is empty\n", __FUNCTION__, __LINE__);
          return 1;
     }
+
+    if (!data.contains("log_level")) {
+        fprintf(stderr, "%s %u log_level not found\n", __FUNCTION__, __LINE__);
+        return 1;
+    }
+    string log_level = data["log_level"].get<string>();
     
     if(!data.contains("grpc")) {
         fprintf(stderr, "%s %u grpc config not found\n", __FUNCTION__, __LINE__);
@@ -58,6 +64,10 @@ int load_config() {
     }
 
     config_t cfg;
+    memset(&cfg, 0, sizeof(cfg));
+    
+    strncpy(cfg.log_level, log_level.c_str(), sizeof(cfg.log_level) - 1);
+    cfg.log_level[sizeof(cfg.log_level) - 1] = '\0';
 
     json &cfg_grpc = data["grpc"];
 

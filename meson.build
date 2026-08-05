@@ -8,6 +8,7 @@ deps = [
     dependency('protobuf'),
     dependency('nlohmann_json'),
     dependency('libevent'),
+    dependency('spdlog'),
 ]
 
 subdir('proto')

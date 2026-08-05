@@ -1,4 +1,5 @@
 #include "config.h"
+#include "logger.h"
 #include "grpc_mgr.h"
 #include "grpc_svc_impl.h"
 
@@ -31,13 +32,14 @@ int GrpcMgr::initialize() {
     target_addr_ = string(cfg.grpc.target_addr);
     srv_addr_ = string(cfg.grpc.srv_addr);
     channel_ = grpc::CreateChannel(target_addr_, grpc::InsecureChannelCredentials());
-    printf("%s %u created the channel, target_addr_: %s, srv_addr_: %s\n", __FUNCTION__, __LINE__, target_addr_.c_str(), srv_addr_.c_str());
+    log_info("created the channel, target_addr_: %s, srv_addr_: %s", target_addr_.c_str(), srv_addr_.c_str());
 
     for (int i = 0; i < MAX_NUM_ASYNC_CLIENTS; ++i) {
         // All AsyncClients share the same underlying HTTP/2 connection
         auto client = std::make_unique<AsyncClient>(i, channel_);
         clients_.push_back(std::move(client));
     }
+    log_info("[GrpcMgr] initialize() created %zu async clients", clients_.size());
 
     initialized_ = true;
     return 0;
@@ -77,13 +79,14 @@ void GrpcMgr::startServer() {
     builder.RegisterService(&service_);
 
     server_ = builder.BuildAndStart();
-    std::cout << "[Server] Listening on " << srv_addr_ << std::endl;
     server_thread_ = std::thread(&GrpcMgr::serverThreadFunc, this);
 }
 
 void GrpcMgr::startAsyncClients() {
+    log_info("[GrpcMgr] Starting %zu async clients", clients_.size());
     for (auto& client : clients_) {
-        client->Start();
+        bool ok = client->Start();
+        log_info("[GrpcMgr] Client id=%d Start() returned=%d", client->Id(), ok);
     }
 }
 
@@ -94,9 +97,10 @@ void GrpcMgr::stopAsyncClients() {
 }
 
 void GrpcMgr::serverThreadFunc() {
-    std::cout << "[GrpcMgr] Server thread started, waiting for requests..." << std::endl;
+    log_info("[GrpcMgr] Listening on %s", srv_addr_.c_str());
+    log_info("[GrpcMgr] Server thread started, waiting for requests...");
     server_->Wait();
-    std::cout << "[GrpcMgr] Server thread exited" << std::endl;
+    log_info("[GrpcMgr] Server thread exited");
 }
 
 AsyncClient* GrpcMgr::PickClient() {

@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "logger.h"
 #include "event_loop.h"      /* Singleton event loop      */
 #include "signal_handler.h"  /* Signal registration        */
 #include "file_watcher.h"
@@ -12,7 +13,7 @@
 
 static void on_sigint(int signum, void *arg) {
     struct event_base *eb = (struct event_base *)arg;
-    printf("received SIGINT (%d), shutting down gracefully...\n", signum);
+    log_info("received SIGINT (%d), shutting down gracefully...\n", signum);
 
     file_watcher_shutdown();
     signal_handler_shutdown();
@@ -40,9 +41,20 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    // Config
+    set_config_path(config_path);
+    if (load_config() != 0) {
+        fprintf(stderr, "Failed to load the config file\n");
+        return 1;
+    }
+    config_t cfg = get_config();
+
+    // Logger
+    log_init(cfg.log_level);
+
     // Initialize event loop
     if (event_loop_init() != 0) {
-        fprintf(stderr, "Failed to initialize event loop\n");
+        log_error("Failed to initialize event loop");
         return 1;
     }
 
@@ -50,31 +62,28 @@ int main(int argc, char *argv[]) {
     register_signal_handler(event_loop_get_base(), SIGINT,  on_sigint, NULL);
     register_signal_handler(event_loop_get_base(), SIGTERM, on_sigint, NULL);
 
-    // Config
-    set_config_path(config_path);
-    if (load_config() != 0) {
-        fprintf(stderr, "Failed to load the config file\n");
-        return 1;
-    }
-
     int err_code = initialize_grpc_mgr();
     if (err_code != 0) {
+        log_error("Failed to initialize gRPC manager");
         return 1;
     }
 
     err_code = initialize_task_mgr();
     if (err_code != 0) {
+        log_error("Failed to initialize task manager");
         return 1;
     }
-
 
     err_code = start_grpc_mgr();
     if (err_code != 0) {
+        log_error("Failed to start gRPC manager");
         return 1;
     }
+    log_info("Started the gRPC manager");
 
     err_code = start_task_mgr();
     if (err_code != 0) {
+        log_error("Failed to start task manager");
         return 1;
     }
 
@@ -83,6 +92,7 @@ int main(int argc, char *argv[]) {
     
     // just for testing
     if (is_server == 1) {
+        // Waiting for the sctp client service has been started, then create a task.
         sleep(5);
         create_task("test_task_1");
     }

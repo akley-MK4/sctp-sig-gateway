@@ -15,6 +15,7 @@ typedef struct config_grpc_s {
 } config_grpc_t;
 
 typedef struct config_s {
+    char log_level[16];
     config_grpc_t grpc;
 
 } config_t;
