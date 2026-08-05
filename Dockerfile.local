@@ -1,0 +1,22 @@
+FROM ubuntu:jammy
+
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    unzip \
+    locales \
+    jq \
+    htop \
+    iputils-ping \
+    net-tools \
+    vim \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG APP_PATH=/usr/local/bin/sctp-sig-gateway
+ARG BUILD_PATH=build/gw
+
+COPY $BUILD_PATH $APP_PATH
+RUN chmod +x $APP_PATH
+RUN setcap cap_net_admin,cap_net_raw+ep $APP_PATH
+
+ENTRYPOINT [$APP_PATH]

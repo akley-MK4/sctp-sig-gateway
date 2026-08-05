@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package task;
+
+// installed in the package grpc-proto/cci.20220627
+import "google/protobuf/timestamp.proto";
+
+message MsgMetadata {
+    uint64 seq = 1;
+    google.protobuf.Timestamp timestamp = 2;
+}
+
+message MsgCreateTaskRequest {
+    MsgMetadata metadata = 1;
+    string taskName = 2;
+}
+
+message MsgCreateTaskResponse {
+    MsgMetadata metadata = 1;
+    int32 errCode = 2;
+    int32 createTaskId = 3;
+}
+
+message MsgDeleteTaskRequest {
+    MsgMetadata metadata = 1;
+    string taskName = 2;
+}
+
+message MsgDeleteTaskResponse {
+    MsgMetadata metadata = 1;
+    int32 errCode = 2;
+}
+
+service TaskService {
+    rpc CreateTask (MsgCreateTaskRequest) returns (MsgCreateTaskResponse);
+    rpc DeleteTask (MsgDeleteTaskRequest) returns (MsgDeleteTaskResponse);
+}
