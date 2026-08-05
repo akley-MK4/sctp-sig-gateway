@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ printf "%s-sctp-server-grpc" (include "sctp-sig-gateway.fullname" .) }}
+  labels:
+    {{- include "sctp-sig-gateway.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.services.sctpServer.grpc.type }}
+  ports:
+    - port: {{ .Values.services.sctpServer.grpc.port }}
+      targetPort: grpc
+      protocol: TCP
+      name: grpc
+  selector:
+    service: "sctp-server"
+    {{- include "sctp-sig-gateway.selectorLabels" . | nindent 4 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ printf "%s-sctp-client-grpc" (include "sctp-sig-gateway.fullname" .) }}
+  labels:
+    {{- include "sctp-sig-gateway.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.services.sctpClient.grpc.type }}
+  ports:
+    - port: {{ .Values.services.sctpClient.grpc.port }}
+      targetPort: grpc
+      protocol: TCP
+      name: grpc
+  selector:
+    service: "sctp-client"
+    {{- include "sctp-sig-gateway.selectorLabels" . | nindent 4 }}

@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ printf "%s-sctp-client" (include "sctp-sig-gateway.fullname" .) }}
+  labels:
+    {{- include "sctp-sig-gateway.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.autoscaling.sctpClient.replicaCount }}
+  selector:
+    matchLabels:
+      service: "sctp-client"
+      {{- include "sctp-sig-gateway.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        service: "sctp-client"
+        {{- include "sctp-sig-gateway.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "sctp-sig-gateway.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: svc
+          securityContext:
+            {{- toYaml .Values.securityContext.sctpClient | nindent 12 }}
+          image: "{{ .Values.images.sctpClient.repository }}:{{ .Values.images.sctpClient.tag | default .Chart.AppVersion }}"
+          command: ["/usr/local/bin/sctp-sig-gateway"]
+          args: ["", "client"]
+          imagePullPolicy: {{ .Values.images.pullPolicy }}
+          ports:
+            - name: grpc
+              containerPort: {{ .Values.services.sctpClient.grpc.port }}
+              protocol: TCP
+            - name: sctp
+              containerPort: {{ .Values.services.sctpClient.sctp.port }}
+              protocol: SCTP
+          resources:
+            {{- toYaml .Values.resources.sctpClient | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/config
+      volumes:
+        - name: config
+          configMap:
+            name: {{ printf "%s-sctp-client" (include "sctp-sig-gateway.fullname" .) }}
