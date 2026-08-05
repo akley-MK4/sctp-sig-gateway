@@ -3,7 +3,7 @@
 #include "task_mgr.h"
 #include "grpc_export.h"
 
-task_mgr_t g_task_mgr;
+static task_mgr_t g_task_mgr;
 
 int initialize_task_mgr() {
     
@@ -26,7 +26,7 @@ static void task_creation_callback(int errCode, int createTaskId) {
 
 int create_task(const char* task_name) {
     // just for testing
-    if (grpc_create_task_async_with_cbapi(task_name, task_creation_callback) == 0) {
+    if (grpc_create_task_async(task_name, task_creation_callback) == 0) {
         printf("Task created successfully\n");
     } else {
         printf("Failed to create task\n");

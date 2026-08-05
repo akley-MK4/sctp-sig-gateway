@@ -7,6 +7,7 @@ AsyncClient::AsyncClient(int id, std::shared_ptr<grpc::ChannelInterface> channel
     stub_ = task::TaskService::NewStub(channel_);
     // Create a dedicated CompletionQueue for this client
     cq_ = std::make_unique<grpc::CompletionQueue>();
+    running_.store(false);
 }
 
 AsyncClient::~AsyncClient() {
@@ -17,8 +18,9 @@ bool AsyncClient::Start() {
     if (running_.exchange(true)) {
         return false;   // Already started
     }
-    cq_thread_ = std::thread([this]() { CQThreadFunc(); });
-    std::cout << "[INFO] AsyncClient id=" << id_ << " started.\n";
+
+    //cq_thread_ = std::thread([this]() { CQThreadFunc(); });
+    cq_thread_ = std::thread(&AsyncClient::CQThreadFunc, this);
     return true;
 }
 
@@ -53,6 +55,7 @@ void AsyncClient::Stop() {
 
 // ── Core loop: block on CQ, invoke callback directly, delete tag ──
 void AsyncClient::CQThreadFunc() {
+    std::cout << "[INFO] AsyncClient id=" << id_ << " started.\n";
     void* tag = nullptr;
     bool ok = false;
 
@@ -68,6 +71,7 @@ void AsyncClient::CQThreadFunc() {
         }
 
         // Directly cast, call callback, and free – no intermediate queue
+        std::cout << "[INFO] AsyncClient id=" << id_ << " received response from grpc server.\n";
         auto* call = static_cast<CallTagBase*>(tag);
         call->OnComplete();
         delete call;

@@ -31,6 +31,7 @@ int GrpcMgr::initialize() {
     target_addr_ = string(cfg.grpc.target_addr);
     srv_addr_ = string(cfg.grpc.srv_addr);
     channel_ = grpc::CreateChannel(target_addr_, grpc::InsecureChannelCredentials());
+    printf("%s %u created the channel, target_addr_: %s, srv_addr_: %s\n", __FUNCTION__, __LINE__, target_addr_.c_str(), srv_addr_.c_str());
 
     for (int i = 0; i < MAX_NUM_ASYNC_CLIENTS; ++i) {
         // All AsyncClients share the same underlying HTTP/2 connection
