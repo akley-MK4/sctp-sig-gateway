@@ -14,7 +14,9 @@ static void task_creation_callback(int errCode, int createTaskId) {
     }
 }
 
-static void on_timer(evutil_socket_t fd, short what, void *arg) {
+static void on_timer(void *arg) {
+    (void)arg;
+    
     if (!g_task_mgr.running) {
         return;
     }

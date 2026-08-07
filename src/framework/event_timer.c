@@ -32,7 +32,7 @@ static void one_shot_internal_cb(evutil_socket_t fd, short what, void *arg) {
     }
 
     if (ctx->user_cb) {
-        ctx->user_cb(fd, what, ctx->user_arg);  // Invoke user-defined logic
+        ctx->user_cb(ctx->user_arg);  // Invoke user-defined logic
     }
 
     /* Cleanup: one-shot timers are destroyed immediately after triggering */
@@ -53,7 +53,7 @@ static void periodic_internal_cb(evutil_socket_t fd, short what, void *arg) {
     }
 
     if (ctx->user_cb) {
-        ctx->user_cb(fd, what, ctx->user_arg);  // Invoke user-defined logic
+        ctx->user_cb(ctx->user_arg);  // Invoke user-defined logic
     }
 }
 

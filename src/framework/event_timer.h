@@ -14,7 +14,7 @@ extern "C" {
  * @param what Event flags (will always include EV_TIMEOUT for timer triggers)
  * @param arg User-provided context pointer passed during timer registration
  */
-typedef void (*timer_callback)(evutil_socket_t fd, short what, void *arg);
+typedef void (*timer_callback)(void *arg);
 
 /**
  * @brief Register a one-shot timer (automatically destroyed after single trigger)
