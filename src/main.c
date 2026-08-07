@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    err_code = initialize_task_mgr();
+    err_code = initialize_task_mgr(is_server);
     if (err_code != 0) {
         log_error("Failed to initialize task manager");
         return 1;
@@ -89,13 +89,6 @@ int main(int argc, char *argv[]) {
 
     // watch config file
     register_file_watcher(event_loop_get_base(), get_config_path(), on_config_file_updated, NULL);
-    
-    // just for testing
-    if (is_server == 1) {
-        // Waiting for the sctp client service has been started, then create a task.
-        sleep(5);
-        create_task("test_task_1");
-    }
 
     // Block main thread: enter event loop
     // Runs until SIGINT/SIGTERM triggers loopbreak

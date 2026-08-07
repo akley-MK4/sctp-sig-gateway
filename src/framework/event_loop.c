@@ -1,7 +1,9 @@
+#include <event2/thread.h>
+#include <stdio.h>
+
 #include "event_loop.h"
 #include "logger.h"
 
-#include <stdio.h>
 
 /* ---------- Internal state (hidden from all callers) ---------- */
 
@@ -14,6 +16,12 @@ int event_loop_init(void) {
         /* Already initialized; idempotent success */
         return 0;
     }
+
+    evthread_use_pthreads();
+
+    // struct event_config *cfg = event_config_new();
+    // event_config_set_flag(cfg, EVENT_BASE_FLAG_MONOTONE_TIME);
+    // g_base = event_base_new_with_config(cfg);
 
     g_base = event_base_new();
     if (g_base == NULL) {

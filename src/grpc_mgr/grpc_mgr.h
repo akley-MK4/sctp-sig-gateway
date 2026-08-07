@@ -23,6 +23,7 @@ public:
 private:
     GrpcMgr();
     ~GrpcMgr();
+    void initializeChannel();
     void serverThreadFunc();
     void startServer();
     void startAsyncClients();

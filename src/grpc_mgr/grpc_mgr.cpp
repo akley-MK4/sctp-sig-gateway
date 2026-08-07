@@ -31,8 +31,7 @@ int GrpcMgr::initialize() {
     config_t cfg = get_config();
     target_addr_ = string(cfg.grpc.target_addr);
     srv_addr_ = string(cfg.grpc.srv_addr);
-    channel_ = grpc::CreateChannel(target_addr_, grpc::InsecureChannelCredentials());
-    log_info("created the channel, target_addr_: %s, srv_addr_: %s", target_addr_.c_str(), srv_addr_.c_str());
+    initializeChannel();
 
     for (int i = 0; i < MAX_NUM_ASYNC_CLIENTS; ++i) {
         // All AsyncClients share the same underlying HTTP/2 connection
@@ -65,6 +64,18 @@ int GrpcMgr::stop() {
     return 0;
 }
 
+
+void GrpcMgr::initializeChannel() {
+    grpc::ChannelArguments args;
+    args.SetInt(GRPC_ARG_KEEPALIVE_TIME_MS, 60 * 1000);
+    args.SetInt(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 10 * 1000);
+    args.SetInt(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, 1);
+    args.SetInt(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA, 0);
+
+    channel_ = grpc::CreateCustomChannel(target_addr_, grpc::InsecureChannelCredentials(), args);
+    log_info("Initialized the channel, target_addr_: %s", target_addr_.c_str());
+}
+
 std::shared_ptr<ChannelInterface> GrpcMgr::getChannel() {
     return channel_;
 }
@@ -75,6 +86,17 @@ bool GrpcMgr::IsStarted() {
 
 void GrpcMgr::startServer() {
     grpc::ServerBuilder builder;
+    // keep alive
+    builder.AddChannelArgument(GRPC_ARG_KEEPALIVE_TIME_MS, 1000 * 60);
+    builder.AddChannelArgument(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 1000 * 10);
+    builder.AddChannelArgument(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, 1);
+    builder.AddChannelArgument(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA, 0);
+    builder.AddChannelArgument(GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS, 1000 * 30);
+    builder.AddChannelArgument(GRPC_ARG_HTTP2_MAX_PING_STRIKES, 3);
+    // connection age
+    builder.AddChannelArgument(GRPC_ARG_MAX_CONNECTION_AGE_MS, 1000 * 60 * 60 * 12);
+    builder.AddChannelArgument(GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS, 1000 * 10);
+    
     builder.AddListeningPort(srv_addr_, grpc::InsecureServerCredentials());
     builder.RegisterService(&service_);
 
