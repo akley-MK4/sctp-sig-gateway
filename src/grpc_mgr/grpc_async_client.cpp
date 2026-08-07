@@ -81,7 +81,7 @@ void AsyncClient::CQThreadFunc() {
         }
 
         // Directly cast, call callback, and free – no intermediate queue
-        log_debug("[AsyncClient] received response from grpc server. id=%d", id_);
+        log_debug("[AsyncClient] received response from target grpc server. id=%d", id_);
         auto* call = static_cast<CallTagBase*>(tag);
         call->OnComplete();
         delete call;
@@ -98,6 +98,7 @@ void AsyncClient::CreateTaskAsync(const std::string& task_name, grpc_create_task
 
     auto reader = stub_->AsyncCreateTask(&call->ctx, call->request, cq_.get());
     reader->Finish(&call->response, &call->status, static_cast<void*>(call));
+    log_debug("[AsyncClient] sent request to target grpc server. id=%d", id_);
 }
 
 void AsyncClient::CreateTaskAsyncWithCallbackApi(const std::string& task_name, grpc_create_task_callback cb) {

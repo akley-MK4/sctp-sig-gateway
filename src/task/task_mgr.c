@@ -15,13 +15,15 @@ static void task_creation_callback(int errCode, int createTaskId) {
 }
 
 static void on_timer(evutil_socket_t fd, short what, void *arg) {
-    if (g_task_mgr.running == 0) {
+    if (!g_task_mgr.running) {
         return;
     }
 
     // just for testing
-    if (grpc_create_task_async("task-test1", task_creation_callback) != 0) {
-        log_error("Failed to create task");
+    if (g_task_mgr.is_server) {
+        if (grpc_create_task_async("task-test1", task_creation_callback) != 0) {
+            log_error("Failed to create task");
+        }
     }
 
     return;

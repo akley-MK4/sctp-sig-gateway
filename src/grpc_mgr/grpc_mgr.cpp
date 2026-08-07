@@ -5,7 +5,7 @@
 
 using std::string;
 
-#define MAX_NUM_ASYNC_CLIENTS 1
+#define MAX_NUM_ASYNC_CLIENTS 2
 
 GrpcMgr::GrpcMgr() 
   : initialized_(false), 
@@ -96,7 +96,7 @@ void GrpcMgr::startServer() {
     // connection age
     builder.AddChannelArgument(GRPC_ARG_MAX_CONNECTION_AGE_MS, 1000 * 60 * 60 * 12);
     builder.AddChannelArgument(GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS, 1000 * 10);
-    
+
     builder.AddListeningPort(srv_addr_, grpc::InsecureServerCredentials());
     builder.RegisterService(&service_);
 

@@ -31,7 +31,6 @@ static void one_shot_internal_cb(evutil_socket_t fd, short what, void *arg) {
         return;
     }
 
-    log_info("One-shot timer fired, executing user callback");
     if (ctx->user_cb) {
         ctx->user_cb(fd, what, ctx->user_arg);  // Invoke user-defined logic
     }
@@ -39,7 +38,6 @@ static void one_shot_internal_cb(evutil_socket_t fd, short what, void *arg) {
     /* Cleanup: one-shot timers are destroyed immediately after triggering */
     event_free(ctx->timer);
     free(ctx);
-    log_debug("One-shot timer and associated context freed");
 }
 
 /**
@@ -54,7 +52,6 @@ static void periodic_internal_cb(evutil_socket_t fd, short what, void *arg) {
         return;
     }
 
-    log_info("Periodic timer fired, executing user callback");
     if (ctx->user_cb) {
         ctx->user_cb(fd, what, ctx->user_arg);  // Invoke user-defined logic
     }
